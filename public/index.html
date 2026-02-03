@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Passive Recon | Made By Orkxn</title>
+    <meta name="description" content="AI-powered passive reconnaissance for security professionals">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            /* Colors - Premium Dark Theme */
+            --bg-primary: #050508;
+            --bg-secondary: #0c0c12;
+            --bg-tertiary: #111118;
+            --bg-card: rgba(18, 18, 26, 0.8);
+            --bg-input: #1a1a24;
+            --bg-hover: rgba(30, 30, 45, 0.6);
+            --bg-glass: rgba(16, 16, 24, 0.7);
+
+            /* Text */
+            --text-primary: #f0f0f8;
+            --text-secondary: #9898b0;
+            --text-muted: #5a5a70;
+
+            /* Accent - Red Team Theme */
+            --accent: #ef4444;
+            --accent-secondary: #f87171;
+            --accent-glow: rgba(239, 68, 68, 0.35);
+            --accent-gradient: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+
+            /* Status Colors */
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.12);
+            --warning: #f59e0b;
+            --warning-bg: rgba(245, 158, 11, 0.12);
+            --danger: #ef4444;
+            --danger-bg: rgba(239, 68, 68, 0.12);
+            --info: #3b82f6;
+            --info-bg: rgba(59, 130, 246, 0.12);
+            --purple: #7c3aed;
+            --purple-bg: rgba(124, 58, 237, 0.12);
+
+            /* Borders */
+            --border: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(255, 255, 255, 0.12);
+
+            /* Sizing */
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-lg: 16px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            background-image:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(239, 68, 68, 0.1), transparent),
+                radial-gradient(ellipse 60% 40% at 100% 50%, rgba(249, 115, 22, 0.05), transparent);
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .brand-icon {
+            width: 52px;
+            height: 52px;
+            background: var(--accent-gradient);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px var(--accent-glow);
+        }
+
+        .brand-icon svg {
+            width: 28px;
+            height: 28px;
+            color: white;
+        }
+
+        .brand-text h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand-text .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .status-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+
+        .status-dot.online {
+            background: var(--success);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+            animation: pulse-glow 2s infinite;
+        }
+
+        .status-dot.offline {
+            background: var(--danger);
+        }
+
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+            }
+        }
+
+        .status-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+
+        .status-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-value {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Control Panel */
+        .control-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr 200px;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-group label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .input-field::placeholder {
+            color: var(--text-muted);
+        }
+
+        select.input-field {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235a5a70' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+        }
+
+        .btn-scan {
+            padding: 0.9rem 1.5rem;
+            background: var(--accent-gradient);
+            border: none;
+            border-radius: var(--radius-sm);
+            color: white;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            align-self: flex-end;
+            height: 48px;
+        }
+
+        .btn-scan:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--accent-glow);
+        }
+
+        .btn-scan:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-scan svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Main Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.25rem;
+            background: rgba(17, 17, 24, 0.6);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .panel-title svg {
+            width: 18px;
+            height: 18px;
+            color: var(--accent-secondary);
+        }
+
+        .panel-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            padding: 0.3rem 0.7rem;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .panel-body {
+            padding: 1.25rem;
+        }
+
+        /* Terminal */
+        .terminal {
+            background: #000;
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            height: 280px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .log-line {
+            margin-bottom: 0.35rem;
+            line-height: 1.5;
+        }
+
+        .log-line::before {
+            content: "❯ ";
+            color: var(--accent);
+        }
+
+        /* AI Section */
+        .ai-section {
+            grid-column: 1 / -1;
+        }
+
+        .ai-content {
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        .ai-content h1,
+        .ai-content h2,
+        .ai-content h3 {
+            color: var(--text-primary);
+            margin: 1rem 0 0.5rem;
+        }
+
+        .ai-content h1 {
+            font-size: 1.25rem;
+        }
+
+        .ai-content h2 {
+            font-size: 1.1rem;
+        }
+
+        .ai-content h3 {
+            font-size: 1rem;
+        }
+
+        .ai-content strong {
+            color: var(--text-primary);
+        }
+
+        .ai-content ul,
+        .ai-content ol {
+            padding-left: 1.5rem;
+            margin: 0.5rem 0;
+        }
+
+        .ai-content code {
+            background: var(--bg-tertiary);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85em;
+        }
+
+        .ai-content pre {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            overflow-x: auto;
+            margin: 0.75rem 0;
+        }
+
+        .ai-placeholder {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Results Grid */
+        .results-section h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .results-section h2 svg {
+            width: 18px;
+            height: 18px;
+            color: var(--accent);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+
+        .result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .result-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .result-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.85rem 1rem;
+            background: rgba(17, 17, 24, 0.6);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .result-card-header svg {
+            width: 16px;
+            height: 16px;
+            color: var(--accent-secondary);
+        }
+
+        .result-card-body {
+            padding: 1rem;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .result-card-body pre {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .result-card-body pre strong {
+            color: var(--text-primary);
+        }
+
+        /* Module Icons */
+        .icon-dns {
+            color: #3b82f6 !important;
+        }
+
+        .icon-infra {
+            color: #10b981 !important;
+        }
+
+        .icon-tech {
+            color: #f59e0b !important;
+        }
+
+        .icon-whois {
+            color: #8b5cf6 !important;
+        }
+
+        .icon-subdomain {
+            color: #06b6d4 !important;
+        }
+
+        .icon-wayback {
+            color: #f97316 !important;
+        }
+
+        .icon-shodan {
+            color: #ef4444 !important;
+        }
+
+        .icon-email {
+            color: #ec4899 !important;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-hover);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .control-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-scan {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .app-container {
+                padding: 1rem;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .header-right {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M12 16v-4M12 8h.01" />
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>AI Passive Recon</h1>
+                    <p class="subtitle">Made By Orkxn</p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-card">
+                    <div class="status-dot" id="ollamaStatusDot"></div>
+                    <div class="status-info">
+                        <span class="status-label">Ollama</span>
+                        <span class="status-value" id="ollamaStatusText">Checking...</span>
+                    </div>
+                </div>
+                <div class="status-card">
+                    <div class="status-dot online"></div>
+                    <div class="status-info">
+                        <span class="status-label">Status</span>
+                        <span class="status-value" id="scanStatus">Ready</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="input-group">
+                <label for="domainInput">Target Domain</label>
+                <input type="text" id="domainInput" class="input-field" placeholder="example.com">
+            </div>
+            <div class="input-group">
+                <label for="modelSelect">AI Model</label>
+                <select id="modelSelect" class="input-field">
+                    <option value="llama3">Llama 3 (Recommended)</option>
+                    <option value="mistral">Mistral</option>
+                    <option value="codellama">CodeLlama</option>
+                    <option value="gemma">Gemma</option>
+                </select>
+            </div>
+            <button id="scanBtn" class="btn-scan" onclick="startScan()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+                <span id="scanBtnText">Start Scan</span>
+            </button>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Terminal Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="4,17 10,11 4,5" />
+                            <line x1="12" y1="19" x2="20" y2="19" />
+                        </svg>
+                        Live Terminal
+                    </div>
+                    <div class="panel-status">
+                        <div class="status-dot" id="terminalDot"></div>
+                        <span id="terminalStatus">Idle</span>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="terminal" id="terminal">
+                        <div class="log-line">System initialized. Awaiting target...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Analysis Panel -->
+            <div class="panel ai-section">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z" />
+                            <path d="M16 10v2a4 4 0 0 1-8 0v-2" />
+                            <path d="M12 14v8" />
+                            <path d="M8 22h8" />
+                        </svg>
+                        AI Intelligence Analysis
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div id="aiOutput" class="ai-content">
+                        <p class="ai-placeholder">AI analysis will appear here once the scan is complete...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <section class="results-section">
+            <h2>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14,2 14,8 20,8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10,9 9,9 8,9" />
+                </svg>
+                Raw Intelligence Data
+            </h2>
+            <div class="results-grid" id="resultsGrid">
+                <!-- Result cards will be injected here -->
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const socket = io();
+        const terminal = document.getElementById('terminal');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const aiOutput = document.getElementById('aiOutput');
+        const scanBtn = document.getElementById('scanBtn');
+        const scanBtnText = document.getElementById('scanBtnText');
+        let aiBuffer = '';
+
+        // Module Icons Map
+        const moduleIcons = {
+            'DNS': { icon: 'M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9m0 0c0-4.97-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9m0 0c0-4.97 1.343-9 3-9', class: 'icon-dns' },
+            'Infrastructure': { icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z', class: 'icon-infra' },
+            'Technology': { icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', class: 'icon-tech' },
+            'Whois': { icon: 'M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0', class: 'icon-whois' },
+            'Subdomains': { icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z', class: 'icon-subdomain' },
+            'Wayback': { icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z', class: 'icon-wayback' },
+            'Shodan': { icon: 'M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z', class: 'icon-shodan' },
+            'Emails': { icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z', class: 'icon-email' }
+        };
+
+        // Logging
+        function log(msg) {
+            const div = document.createElement('div');
+            div.className = 'log-line';
+            div.textContent = msg;
+            terminal.appendChild(div);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // Create result card
+        function createCard(title, content) {
+            const iconData = moduleIcons[title] || { icon: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z', class: '' };
+
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <div class="result-card-header">
+                    <svg class="${iconData.class}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="${iconData.icon}"/>
+                    </svg>
+                    ${title}
+                </div>
+                <div class="result-card-body">${content}</div>
+            `;
+            return card;
+        }
+
+        // Format data with special handling
+        function formatData(data, module) {
+            if (typeof data === 'string') return data;
+
+            // DNS formatting
+            if (module === 'DNS' && data && !data.error) {
+                let html = '';
+                const recordTypes = ['A', 'AAAA', 'MX', 'NS', 'TXT', 'CNAME', 'SOA'];
+                recordTypes.forEach(type => {
+                    if (data[type] && data[type].length > 0) {
+                        html += `<strong style="color:#3b82f6">${type} Records:</strong>\n`;
+                        if (type === 'MX') {
+                            data[type].forEach(record => {
+                                if (typeof record === 'object') {
+                                    html += `  • ${record.exchange} (priority: ${record.priority})\n`;
+                                } else {
+                                    html += `  • ${record}\n`;
+                                }
+                            });
+                        } else if (type === 'SOA') {
+                            const soa = data[type];
+                            if (typeof soa === 'object') {
+                                html += `  • Primary NS: ${soa.nsname || 'N/A'}\n`;
+                                html += `  • Admin: ${soa.hostmaster || 'N/A'}\n`;
+                            } else {
+                                html += `  • ${JSON.stringify(soa)}\n`;
+                            }
+                        } else if (type === 'TXT') {
+                            data[type].forEach(record => {
+                                const txt = Array.isArray(record) ? record.join('') : record;
+                                html += `  • ${txt.substring(0, 80)}${txt.length > 80 ? '...' : ''}\n`;
+                            });
+                        } else {
+                            data[type].forEach(record => {
+                                html += `  • ${record}\n`;
+                            });
+                        }
+                        html += '\n';
+                    }
+                });
+                return html || 'No DNS records found';
+            }
+
+            // WHOIS formatting
+            if (module === 'Whois' && data && !data.error) {
+                let html = '';
+                // Key fields to display
+                const keyFields = {
+                    'domainName': 'Domain Name',
+                    'registrar': 'Registrar',
+                    'registrarUrl': 'Registrar URL',
+                    'creationDate': 'Created',
+                    'createdDate': 'Created',
+                    'updatedDate': 'Updated',
+                    'expirationDate': 'Expires',
+                    'registryExpiryDate': 'Expires',
+                    'registrantOrganization': 'Organization',
+                    'registrantCountry': 'Country',
+                    'nameServer': 'Name Servers',
+                    'nameServers': 'Name Servers',
+                    'status': 'Status',
+                    'domainStatus': 'Status',
+                    'dnssec': 'DNSSEC'
+                };
+
+                Object.entries(keyFields).forEach(([key, label]) => {
+                    if (data[key]) {
+                        let value = data[key];
+                        // Handle arrays
+                        if (Array.isArray(value)) {
+                            value = value.slice(0, 4).join(', ');
+                            if (data[key].length > 4) value += '...';
+                        }
+                        // Truncate long values
+                        if (typeof value === 'string' && value.length > 60) {
+                            value = value.substring(0, 60) + '...';
+                        }
+                        html += `<strong>${label}:</strong> ${value}\n`;
+                    }
+                });
+
+                return html || JSON.stringify(data, null, 2);
+            }
+
+            // Shodan formatting
+            if (module === 'Shodan' && data && !data.error) {
+                let html = '';
+                if (data.ip) html += `<strong>IP:</strong> ${data.ip}\n`;
+                if (data.org) html += `<strong>Organization:</strong> ${data.org}\n`;
+                if (data.isp) html += `<strong>ISP:</strong> ${data.isp}\n`;
+                if (data.asn) html += `<strong>ASN:</strong> ${data.asn}\n`;
+                if (data.country) html += `<strong>Location:</strong> ${data.city || ''}, ${data.country}\n`;
+                if (data.ports && data.ports.length) html += `<strong>Open Ports:</strong> ${data.ports.join(', ')}\n`;
+                if (data.vulns && data.vulns.length) html += `<strong style="color:#ef4444">Vulnerabilities:</strong> ${data.vulns.join(', ')}\n`;
+                if (data.services && data.services.length) {
+                    html += `\n<strong>Services:</strong>\n`;
+                    data.services.forEach(s => {
+                        html += `  • Port ${s.port}/${s.protocol}: ${s.product} ${s.version}\n`;
+                    });
+                }
+                return html || JSON.stringify(data, null, 2);
+            }
+
+            // Email formatting
+            if (module === 'Emails' && data && !data.error) {
+                let html = '';
+                if (data.found && data.found.length) {
+                    html += `<strong style="color:#10b981">Found Emails (${data.found.length}):</strong>\n`;
+                    data.found.forEach(e => html += `  ✓ ${e}\n`);
+                }
+                if (data.suggested && data.suggested.length) {
+                    html += `\n<strong>Suggested Patterns:</strong>\n`;
+                    data.suggested.slice(0, 8).forEach(e => html += `  • ${e}\n`);
+                }
+                if (data.sources && data.sources.length) {
+                    html += `\n<strong>Sources:</strong> ${data.sources.join(', ')}`;
+                }
+                return html || JSON.stringify(data, null, 2);
+            }
+
+            // Infrastructure formatting
+            if (module === 'Infrastructure' && data && !data.error) {
+                let html = '';
+                if (data.ip) html += `<strong>IP Address:</strong> ${data.ip}\n`;
+                if (data.geo && !data.geo.error) {
+                    html += `<strong>Location:</strong> ${data.geo.city || 'Unknown'}, ${data.geo.country || 'Unknown'}\n`;
+                    if (data.geo.timezone) html += `<strong>Timezone:</strong> ${data.geo.timezone}\n`;
+                }
+                html += `\n<strong>Security Files:</strong>\n`;
+                html += `  • robots.txt: ${data.robots}\n`;
+                html += `  • sitemap.xml: ${data.sitemap}\n`;
+                html += `  • security.txt: ${data.securityTxt}\n`;
+
+                if (data.headers && Object.keys(data.headers).length > 0) {
+                    html += `\n<strong>Security Headers:</strong>\n`;
+                    Object.entries(data.headers).forEach(([key, value]) => {
+                        html += `  • ${key}: ${value.substring(0, 50)}${value.length > 50 ? '...' : ''}\n`;
+                    });
+                }
+
+                if (data.emails && data.emails.length > 0) {
+                    html += `\n<strong>Emails Found:</strong> ${data.emails.join(', ')}\n`;
+                }
+                if (data.comments && data.comments.length > 0) {
+                    html += `\n<strong>HTML Comments:</strong> ${data.comments.length} found\n`;
+                }
+                return html || JSON.stringify(data, null, 2);
+            }
+
+            return JSON.stringify(data, null, 2);
+        }
+
+        // Ollama status check
+        async function checkOllama() {
+            const dot = document.getElementById('ollamaStatusDot');
+            const text = document.getElementById('ollamaStatusText');
+            try {
+                const res = await fetch('/api/ollama-status');
+                const data = await res.json();
+                if (data.status === 'online') {
+                    dot.className = 'status-dot online';
+                    text.textContent = 'Online';
+                } else {
+                    dot.className = 'status-dot offline';
+                    text.textContent = 'Offline';
+                }
+            } catch (e) {
+                dot.className = 'status-dot offline';
+                text.textContent = 'Error';
+            }
+        }
+
+        checkOllama();
+        setInterval(checkOllama, 10000);
+
+        // Start scan
+        function startScan() {
+            const domain = document.getElementById('domainInput').value.trim();
+            if (!domain) {
+                alert('Please enter a target domain');
+                return;
+            }
+
+            // Reset UI
+            terminal.innerHTML = '';
+            resultsGrid.innerHTML = '';
+            aiBuffer = '';
+            aiOutput.innerHTML = '<p class="ai-placeholder">Analyzing reconnaissance data...</p>';
+
+            // Update button state
+            scanBtn.disabled = true;
+            scanBtnText.innerHTML = '<span class="spinner"></span> Scanning...';
+
+            // Update status
+            document.getElementById('scanStatus').textContent = 'Scanning';
+            document.getElementById('terminalDot').className = 'status-dot online';
+            document.getElementById('terminalStatus').textContent = 'Active';
+
+            log(`Initiating passive reconnaissance on: ${domain}`);
+
+            const model = document.getElementById('modelSelect').value;
+            socket.emit('start-scan', { domain, model });
+        }
+
+        // Socket events
+        socket.on('log', (msg) => log(msg));
+
+        socket.on('result', (payload) => {
+            const formatted = formatData(payload.data, payload.module);
+            const card = createCard(payload.module, `<pre>${formatted}</pre>`);
+            resultsGrid.appendChild(card);
+        });
+
+        socket.on('ai-chunk', (chunk) => {
+            aiBuffer += chunk;
+            aiOutput.innerHTML = marked.parse(aiBuffer);
+        });
+
+        socket.on('done', () => {
+            scanBtn.disabled = false;
+            scanBtnText.innerHTML = `
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+                Start Scan
+            `;
+            document.getElementById('scanStatus').textContent = 'Complete';
+            document.getElementById('terminalDot').className = 'status-dot';
+            document.getElementById('terminalStatus').textContent = 'Complete';
+            log('Scan sequence completed successfully.');
+        });
+
+        // Keyboard shortcut
+        document.getElementById('domainInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !scanBtn.disabled) {
+                startScan();
+            }
+        });
+    </script>
+</body>
+
+</html>
